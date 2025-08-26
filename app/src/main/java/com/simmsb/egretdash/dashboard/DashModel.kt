@@ -15,8 +15,14 @@ import com.simmsb.egretdash.Route
 import com.simmsb.egretdash.Scooter
 import com.simmsb.egretdash.ScooterStatus
 import com.simmsb.egretdash.Trip
+import com.simmsb.egretdash.requestPermission
 import com.simmsb.egretdash.requirements.BluetoothRequirements
 import com.simmsb.egretdash.requirements.Deficiency
+import com.simmsb.egretdash.scan.DeviceLocator
+import dev.icerock.moko.permissions.Permission
+import dev.icerock.moko.permissions.PermissionState
+import dev.icerock.moko.permissions.PermissionsController
+import dev.icerock.moko.permissions.bluetooth.BLUETOOTH_CONNECT
 import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.plus
@@ -26,11 +32,16 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -62,7 +73,8 @@ class DashModel(
     val database: DashboardDatabase,
     identifier: Identifier,
     bluetoothRequirements: BluetoothRequirements,
-) : ViewModel() {
+    val permissionsController: PermissionsController
+    ) : ViewModel() {
     val peripheral = Peripheral(identifier) {
         logging { level = Logging.Level.Warnings }
     }
@@ -148,6 +160,11 @@ class DashModel(
 //            scooter.setPeriod(period)
 //        }
 //    }
+
+
+    fun openAppSettings() {
+        permissionsController.openAppSettings()
+    }
 
     fun onDispose() {
         // GlobalScope to allow disconnect process to continue after leaving screen.

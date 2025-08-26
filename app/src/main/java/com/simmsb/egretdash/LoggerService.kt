@@ -15,6 +15,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
 
@@ -68,7 +69,9 @@ class LoggerService : Service() {
                 }
 
                 val scooter = Scooter(peripheral)
-                scooter.scooterStatus.collect { s ->
+
+                val statusJob = launch {
+                    scooter.scooterStatus.collect { s ->
                         database.run {
                             statusDao().insert(
                                 ScooterStatusDB(
@@ -94,6 +97,25 @@ class LoggerService : Service() {
                             )
                         }
                     }
+                }
+
+                val odoJob = launch {
+                    scooter.odometer.collect { s ->
+                        database.run {
+                            odoDao().insert(OdometerDB(
+                                id = 0,
+                                date = Clock.System.now(),
+                                hectoMeters = s.hectoMeters,
+                                total = s.total,
+                                totalEco = s.totalEco,
+                                totalTour = s.totalTour,
+                                totalSport = s.totalSport,
+                            ))
+                        }
+                    }
+                }
+
+                joinAll(statusJob)
             } finally {
                 stopSelf()
             }

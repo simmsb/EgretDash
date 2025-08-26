@@ -1,19 +1,24 @@
 package com.simmsb.egretdash
 
 import android.content.Context
+import android.net.Uri
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
 import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
+import androidx.room.RawQuery
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.RoomRawQuery
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
+import androidx.sqlite.db.SimpleSQLiteQuery
+import androidx.sqlite.db.SupportSQLiteQuery
 import com.simmsb.egretdash.ScooterStatus.DrivingMode
 import kotlinx.coroutines.flow.Flow
-import kotlinx.datetime.LocalDateTime
+import java.io.File
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -70,7 +75,7 @@ interface StatusDao {
 data class OdometerDB(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val date: LocalDateTime,
+    val date: Instant,
     val hectoMeters: Int,
     val total: Int,
     val totalEco: Int,
@@ -78,14 +83,44 @@ data class OdometerDB(
     val totalSport: Int,
 )
 
+@Dao
+interface OdoDao {
+    @Insert()
+    suspend fun insert(odometerDB: OdometerDB)
 
-@Database(entities = [ScooterStatusDB::class], version = 1, exportSchema = false)
+    @Query("SELECT * from odo ORDER BY date ASC")
+    fun getAllItems(): Flow<List<OdometerDB>>
+
+    @Query("SELECT * from odo ORDER BY date DESC LIMIT :n")
+    fun getLatest(n: Int): Flow<List<OdometerDB>>
+}
+
+@Dao
+interface RawDao {
+    @RawQuery
+    suspend fun raw(sql: RoomRawQuery): Int
+}
+
+@Database(entities = [ScooterStatusDB::class, OdometerDB::class], version = 1, exportSchema = false)
 @TypeConverters(
     InstantConverter::class,
 )
 abstract class DashboardDatabase : RoomDatabase() {
 
     abstract fun statusDao(): StatusDao
+    abstract fun odoDao(): OdoDao
+
+    abstract fun rawDao(): RawDao
+
+    suspend fun checkpoint() {
+        rawDao().raw(RoomRawQuery("pragma wal_checkpoint(full)"));
+    }
+
+    suspend fun dump(context: Context): ByteArray {
+        val dbPath = openHelper.readableDatabase.path!!
+        checkpoint()
+        return File(dbPath).readBytes()
+    }
 
     companion object {
         @Volatile

@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
@@ -23,6 +24,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -76,6 +78,17 @@ data class ScreenDash(val identifier: Identifier) : NavBarItem() {
 
     override fun description(): String {
         return "Dashboard"
+    }
+}
+
+@Serializable
+data object ScreenDump : NavBarItem() {
+    override fun icon(): ImageVector {
+        return Icons.Default.Create
+    }
+
+    override fun description(): String {
+        return "Dump"
     }
 }
 
@@ -154,9 +167,9 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun topLevelRoutes(): List<NavBarItem> {
         val preferredDevice =
-            preferredDevice()
+            preferredDevice() ?: "f0:19:88:de:db:c5"
 
-        return listOf(ScreenScan) + (preferredDevice?.let { listOf(ScreenDash(it)) } ?: listOf())
+        return listOf(ScreenScan) + (preferredDevice?.let { listOf(ScreenDash(it)) } ?: listOf()) + listOf(ScreenDump)
     }
 
     @Composable
@@ -176,7 +189,6 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-
         setContent {
             val routes = topLevelRoutes()
             EgretDashTheme {
@@ -217,6 +229,7 @@ class MainActivity : ComponentActivity() {
                         entryProvider = entryProvider {
                             entry<ScreenScan> { ScanScreen(navigator) }
                             entry<ScreenDash> { DashScreen(navigator, database, it.identifier) }
+                            entry<ScreenDump> { DumpScreen(database) }
                         },
                         transitionSpec = {
                             // Slide in from right when navigating forward

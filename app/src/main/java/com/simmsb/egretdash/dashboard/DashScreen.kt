@@ -15,6 +15,8 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -41,6 +43,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
 import com.himanshoe.charty.bar.SignalProgressBarChart
 import com.himanshoe.charty.circle.SpeedometerProgressBar
 import com.himanshoe.charty.common.ChartColor
@@ -53,9 +59,12 @@ import com.juul.kable.Identifier
 import com.simmsb.egretdash.DashboardDatabase
 import com.simmsb.egretdash.Navigator
 import com.simmsb.egretdash.Route
+import com.simmsb.egretdash.components.ActionRequired
 import com.simmsb.egretdash.components.BluetoothDisabled
 import com.simmsb.egretdash.rememberSystemControl
 import com.simmsb.egretdash.requirements.rememberBluetoothRequirementsFactory
+import dev.icerock.moko.permissions.compose.BindEffect
+import dev.icerock.moko.permissions.compose.rememberPermissionsControllerFactory
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDateTime
@@ -68,13 +77,40 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.time.Duration
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun DashScreen(
     navigator: Navigator<Route>,
     database: DashboardDatabase,
     identifier: Identifier,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
+) {
+    val connectPermissionState = rememberPermissionState(android.Manifest.permission.BLUETOOTH_CONNECT)
+
+    if (connectPermissionState.status.isGranted) {
+        DashInner(navigator, database, identifier, lifecycleOwner)
+    } else {
+        Column {
+            val textToShow = if (connectPermissionState.status.shouldShowRationale) {
+                "Needs it."
+            } else {
+                "Needs it."
+            }
+            Text(textToShow)
+            Button(onClick = { connectPermissionState.launchPermissionRequest() }) {
+                Text("Request permission")
+            }
+        }
+    }
+
+}
+
+@Composable
+private fun DashInner(
+    navigator: Navigator<Route>,
+    database: DashboardDatabase,
+    identifier: Identifier,
+    lifecycleOwner: LifecycleOwner
 ) {
     val screenModel = rememberScreenModel(navigator, database, identifier)
     val viewState = screenModel.state.collectAsState().value
@@ -100,22 +136,38 @@ fun DashScreen(
         val systemControl = rememberSystemControl()
         when (viewState) {
             ViewState.BluetoothOff -> BluetoothDisabled(systemControl::requestToTurnBluetoothOn)
+            ViewState.NotGranted -> BluetoothPermissionsDenied(screenModel::openAppSettings)
             is ViewState.Connected -> ScooterPane(screenModel)
-            else -> Connecting()
+            else ->
+                Connecting()
         }
 
     }
 }
 
 @Composable
+private fun BluetoothPermissionsDenied(onShowAppSettingsClick: () -> Unit) {
+    ActionRequired(
+        icon = Icons.Filled.Warning,
+        contentDescription = "Bluetooth permissions required",
+        description = "Bluetooth permissions are required for connecting. Please grant the permission.",
+        buttonText = "Open Settings",
+        onClick = onShowAppSettingsClick,
+    )
+}
+
+@Composable
 private fun rememberScreenModel(
     navigator: Navigator<Route>, database: DashboardDatabase, identifier: Identifier
 ): DashModel {
+    val permissionsFactory = rememberPermissionsControllerFactory()
     val bluetoothRequirementsFactory = rememberBluetoothRequirementsFactory()
     val screenModel = remember {
+        val permissionsController = permissionsFactory.createPermissionsController()
         val bluetoothRequirements = bluetoothRequirementsFactory.create()
-        DashModel(navigator, database, identifier, bluetoothRequirements)
+        DashModel(navigator, database, identifier, bluetoothRequirements, permissionsController)
     }
+    BindEffect(screenModel.permissionsController)
     return screenModel
 }
 
@@ -326,8 +378,8 @@ private fun DashboardTab(
                         progress = { state.speed / 25f },
                         title = "Speed: ${state.speed} km/h",
                         color = ChartColor.Solid(MaterialTheme.colorScheme.primary),
-                        progressIndicatorColor = ChartColor.Solid(MaterialTheme.colorScheme.primary),
-                        trackColor = ChartColor.Solid(MaterialTheme.colorScheme.secondary),
+                        progressIndicatorColor = ChartColor.Solid(MaterialTheme.colorScheme.onPrimary),
+                        trackColor = ChartColor.Solid(MaterialTheme.colorScheme.primaryContainer),
                         titleTextConfig = TextConfig.default(
                             color = MaterialTheme.colorScheme.onBackground.asSolidChartColor(),
                             style = MaterialTheme.typography.labelMedium
@@ -351,8 +403,8 @@ private fun DashboardTab(
                         progress = { state.powerOutput / 255f },
                         title = "Power: ${state.powerOutput}%",
                         color = ChartColor.Solid(MaterialTheme.colorScheme.primary),
-                        progressIndicatorColor = ChartColor.Solid(MaterialTheme.colorScheme.primary),
-                        trackColor = ChartColor.Solid(MaterialTheme.colorScheme.secondary),
+                        progressIndicatorColor = ChartColor.Solid(MaterialTheme.colorScheme.onPrimary),
+                        trackColor = ChartColor.Solid(MaterialTheme.colorScheme.primaryContainer),
                         titleTextConfig = TextConfig.default(
                             color = MaterialTheme.colorScheme.onBackground.asSolidChartColor(),
                             style = MaterialTheme.typography.labelMedium
@@ -381,7 +433,7 @@ private fun DashboardTab(
                     progress = { state.throttle.toFloat() },
                     maxProgress = 100f,
                     progressColor = ChartColor.Solid(MaterialTheme.colorScheme.primary),
-                    trackColor = ChartColor.Solid(MaterialTheme.colorScheme.secondary),
+                    trackColor = ChartColor.Solid(MaterialTheme.colorScheme.primaryContainer),
                     modifier = Modifier
                         // .rotate(90f)
                         .fillMaxSize()

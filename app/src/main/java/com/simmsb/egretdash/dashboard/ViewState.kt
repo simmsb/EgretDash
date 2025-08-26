@@ -2,6 +2,8 @@ package com.simmsb.egretdash.dashboard
 
 sealed class ViewState {
     data object BluetoothOff : ViewState()
+
+    data object NotGranted : ViewState()
     data object Connecting : ViewState()
     data class Connected(
         val battery: Int,
