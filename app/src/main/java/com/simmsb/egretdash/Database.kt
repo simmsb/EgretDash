@@ -1,7 +1,6 @@
 package com.simmsb.egretdash
 
 import android.content.Context
-import android.net.Uri
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
@@ -14,8 +13,6 @@ import androidx.room.RoomDatabase
 import androidx.room.RoomRawQuery
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
-import androidx.sqlite.db.SimpleSQLiteQuery
-import androidx.sqlite.db.SupportSQLiteQuery
 import com.simmsb.egretdash.ScooterStatus.DrivingMode
 import kotlinx.coroutines.flow.Flow
 import java.io.File
@@ -113,7 +110,7 @@ abstract class DashboardDatabase : RoomDatabase() {
     abstract fun rawDao(): RawDao
 
     suspend fun checkpoint() {
-        rawDao().raw(RoomRawQuery("pragma wal_checkpoint(full)"));
+        rawDao().raw(RoomRawQuery("pragma wal_checkpoint(full)"))
     }
 
     suspend fun dump(context: Context): ByteArray {

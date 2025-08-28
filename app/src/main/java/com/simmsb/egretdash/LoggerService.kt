@@ -3,6 +3,8 @@ package com.simmsb.egretdash
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.IBinder
@@ -20,6 +22,16 @@ import kotlinx.coroutines.launch
 import kotlin.time.Clock
 
 
+class RestartLoggerReceiver : BroadcastReceiver() {
+    companion object {
+        const val TAG: String = "RestartLoggerReceiver"
+    }
+
+    override fun onReceive(context: Context?, intent: Intent?) {
+        context?.startService(Intent(context.applicationContext, LoggerService::class.java))
+    }
+}
+
 class LoggerService : Service() {
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.Main + job)
@@ -29,6 +41,8 @@ class LoggerService : Service() {
     }
 
     override fun onDestroy() {
+        Toast.makeText(this, "Egret Dash background service stopped", Toast.LENGTH_SHORT).show()
+        sendBroadcast(Intent("RestartLoggerService"))
         super.onDestroy()
         job.cancel()
     }
@@ -45,7 +59,7 @@ class LoggerService : Service() {
             "Foreground bluetooth worker",
             NotificationManager.IMPORTANCE_LOW
         )
-        channel.setDescription("Channel for foreground service notification")
+        channel.description = "Channel for foreground service notification"
         val notificationManager = applicationContext.getSystemService(NotificationManager::class.java)
         notificationManager.createNotificationChannel(channel)
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
@@ -99,7 +113,7 @@ class LoggerService : Service() {
                     }
                 }
 
-                val odoJob = launch {
+                launch {
                     scooter.odometer.collect { s ->
                         database.run {
                             odoDao().insert(OdometerDB(

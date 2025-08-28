@@ -1,6 +1,5 @@
 package com.simmsb.egretdash
 
-import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -9,16 +8,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.app.ActivityCompat.startActivityForResult
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.io.IOException
-import java.util.Date
 import kotlin.time.Clock
-import kotlin.time.Instant
 
 @Composable
 fun DumpScreen(db: DashboardDatabase) {

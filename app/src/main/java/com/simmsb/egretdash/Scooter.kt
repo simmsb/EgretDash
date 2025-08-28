@@ -12,6 +12,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
@@ -61,7 +62,7 @@ class Scooter (private val peripheral: Peripheral) {
                     level = Events
                 }
                 filters {
-                   match { name = Filter.Name.Exact("EGRET GT") }
+                   match { name = Filter.Name.Prefix("EGRET") }
                 }
             }
         }
@@ -77,6 +78,7 @@ class Scooter (private val peripheral: Peripheral) {
         peripheral.observe(batteryLevelCharacteristic),
     ).map(ByteArray::first)
         .map(Byte::toInt)
+        .catch {  }
 
     private val _status = MutableStateFlow<ByteArray?>(null)
 
@@ -84,6 +86,7 @@ class Scooter (private val peripheral: Peripheral) {
         _status.filterNotNull(),
         peripheral.observe(operationStatsCharacteristic)
     ).map(ScooterStatus::fromByteArray)
+        .catch {  }
 
     private val _odo = MutableStateFlow<ByteArray?>(null)
 
@@ -91,6 +94,7 @@ class Scooter (private val peripheral: Peripheral) {
         _odo.filterNotNull(),
         peripheral.observe(operationOdoCharacteristic)
     ).map(Odometer::fromByteArray)
+        .catch {  }
 
     private val _diag = MutableStateFlow<ByteArray?>(null)
 
@@ -98,6 +102,7 @@ class Scooter (private val peripheral: Peripheral) {
         _diag.filterNotNull(),
         peripheral.observe(diagnosticsStatusCharacteristic)
     ).map(Diagnostics::fromBytes)
+        .catch {  }
 
     private val _rssi = MutableStateFlow<Int?>(null)
     val rssi = _rssi.asStateFlow()
@@ -182,7 +187,7 @@ class Scooter (private val peripheral: Peripheral) {
         tripsmutex.withLock {
             try {
                 Log.info { "About to read trips" }
-                var sentStart = false;
+                var sentStart = false
                 val results = peripheral.observe(tripsCharacteristic, {
                     if (!sentStart) {
                         Log.info { "Writing trips fetch command" }

@@ -1,5 +1,6 @@
 package com.simmsb.egretdash.dashboard
 
+import android.content.Intent
 import android.view.WindowManager
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +29,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
@@ -36,10 +38,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat.startForegroundService
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,6 +61,7 @@ import com.himanshoe.charty.line.config.LineChartColorConfig
 import com.himanshoe.charty.line.model.LineData
 import com.juul.kable.Identifier
 import com.simmsb.egretdash.DashboardDatabase
+import com.simmsb.egretdash.LoggerService
 import com.simmsb.egretdash.Navigator
 import com.simmsb.egretdash.Route
 import com.simmsb.egretdash.components.ActionRequired
@@ -114,6 +119,13 @@ private fun DashInner(
 ) {
     val screenModel = rememberScreenModel(navigator, database, identifier)
     val viewState = screenModel.state.collectAsState().value
+    val context = LocalContext.current
+
+    LaunchedEffect(identifier) {
+        context.stopService(Intent(context.applicationContext, LoggerService::class.java))
+        context.startForegroundService(Intent(context.applicationContext, LoggerService::class.java))
+    }
+
 
     DisposableEffect(lifecycleOwner) {
         onDispose { screenModel.onDispose() }

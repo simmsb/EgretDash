@@ -1,5 +1,7 @@
 package com.simmsb.egretdash.dashboard
 
+import android.content.Intent
+import androidx.core.content.ContextCompat.startForegroundService
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.juul.kable.Identifier
@@ -9,6 +11,7 @@ import com.juul.kable.logs.Logging
 import com.juul.khronicle.Log
 import com.simmsb.egretdash.DashboardDatabase
 import com.simmsb.egretdash.Diagnostics
+import com.simmsb.egretdash.LoggerService
 import com.simmsb.egretdash.Navigator
 import com.simmsb.egretdash.Odometer
 import com.simmsb.egretdash.Route

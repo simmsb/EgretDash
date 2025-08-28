@@ -1,24 +1,26 @@
 package com.simmsb.egretdash
 
-import java.nio.ByteBuffer
+import com.simmsb.egretdash.PayloadUtils.flag
+import com.simmsb.egretdash.PayloadUtils.uInt16
+import com.simmsb.egretdash.PayloadUtils.uInt8
 
 data class ScooterStatus(
-val charging: Boolean,
-val drivingMode: DrivingMode,
-val ecoModeRange: Float,
-val errorCode: Int,
-val findMyStatus: Int,
-val lightsOn: Boolean,
-val locked: Boolean,
-val powerOutput: Int,
-val poweredOn: Boolean,
-val rangeFactor: Int,
-val speed: Float,
-val sportModeRange: Float,
-val temperatureHigh: Boolean,
-val temperatureLow: Boolean,
-val throttle: Int,
-val tourModeRange: Float,
+    val charging: Boolean,
+    val drivingMode: DrivingMode,
+    val ecoModeRange: Float,
+    val errorCode: Int,
+    val findMyStatus: Int,
+    val lightsOn: Boolean,
+    val locked: Boolean,
+    val powerOutput: Int,
+    val poweredOn: Boolean,
+    val rangeFactor: Int,
+    val speed: Float,
+    val sportModeRange: Float,
+    val temperatureHigh: Boolean,
+    val temperatureLow: Boolean,
+    val throttle: Int,
+    val tourModeRange: Float,
 ) {
     enum class DrivingMode {
         Walk,
@@ -59,21 +61,7 @@ val tourModeRange: Float,
             tourModeRange = 0f
         )
 
-        private fun flag(byte: UByte, idx: Int): Boolean {
-            return (byte and ((1u shl idx).toUByte())) > 0.toUByte()
-        }
-
-
-        private fun uInt8(bArr: UByteArray, i: Int): Int {
-            return bArr[i].toInt()
-        }
-
-        private fun uInt16(bArr: UByteArray, i: Int): Int {
-            return ByteBuffer.wrap(bArr.toByteArray()).getShort(i).toInt()
-        }
-
         fun fromByteArray(bytes: ByteArray): ScooterStatus {
-            val bytes = bytes.toUByteArray()
             val poweredOn: Boolean = flag(bytes[0], 0)
             val locked: Boolean = flag(bytes[0], 1)
             val lightsOn: Boolean = flag(bytes[0], 2)

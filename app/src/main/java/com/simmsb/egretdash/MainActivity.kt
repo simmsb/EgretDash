@@ -1,12 +1,10 @@
 package com.simmsb.egretdash
 
 import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
@@ -192,7 +190,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             val routes = topLevelRoutes()
             EgretDashTheme {
-                preferredDevice()?.let { startForegroundService(Intent(this, LoggerService::class.java)) }
                 val defaultScreen = preferredDevice()?.let { ScreenDash(it) } ?: ScreenScan
                 val backStack = rememberNavBackStack(defaultScreen)
                 Log.info { "Default screen: $defaultScreen, backstack: $backStack"}

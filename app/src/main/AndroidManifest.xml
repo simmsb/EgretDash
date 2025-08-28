@@ -21,6 +21,14 @@
             android:exported="true"
             android:foregroundServiceType="connectedDevice"></service>
 
+        <receiver android:name=".RestartLoggerReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="RestartLoggerService" >
+                </action>
+            </intent-filter>
+        </receiver>
+
         <activity
             android:name=".MainActivity"
             android:enableOnBackInvokedCallback="true"
